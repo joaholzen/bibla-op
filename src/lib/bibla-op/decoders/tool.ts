@@ -1,10 +1,15 @@
 /**
  * biblaOp — Open Protocol Library
  * Tool MID field definitions: MID 0041-0048, 0700-0701
+ *
+ * Tool data includes serial numbers, calibration info, service dates,
+ * and hardware specs. MID 0041 has 9 revisions adding progressively
+ * more detail. Also covers tool pairing (0047/0048) and download (0700/0701).
  */
 
 import type { FieldDef, DecoderEntry } from '../types/decoders';
 
+/** MID 0041 rev 1: basic tool data — serial, tightening count, calibration date */
 export const MID_0041_REV1: FieldDef[] = [
   { id: '01', label: 'Tool Serial Number', length: 14 },
   { id: '02', label: 'No. of Tightenings', length: 10 },
@@ -12,6 +17,7 @@ export const MID_0041_REV1: FieldDef[] = [
   { id: '04', label: 'Controller Serial Number', length: 10 },
 ];
 
+/** Rev 2: adds calibration value, service info, tool type */
 export const MID_0041_REV2: FieldDef[] = [
   ...MID_0041_REV1,
   { id: '05', label: 'Calibration Value', length: 7, unit: 'Nm' },
@@ -20,6 +26,7 @@ export const MID_0041_REV2: FieldDef[] = [
   { id: '08', label: 'Tool Type', length: 2 },
 ];
 
+/** Rev 3: adds motor size and open end data */
 const MID_0041_REV3: FieldDef[] = [
   ...MID_0041_REV2,
   { id: '09', label: 'Motor Size', length: 2 },
@@ -31,6 +38,7 @@ const MID_0041_REV4: FieldDef[] = [
   { id: '11', label: 'Controller Software Version', length: 19 },
 ];
 
+/** Rev 5: adds max torque, gear ratio, and full speed */
 const MID_0041_REV5: FieldDef[] = [
   ...MID_0041_REV4,
   { id: '12', label: 'Tool Max Torque', length: 7, unit: 'Nm' },
@@ -60,6 +68,7 @@ const MID_0041_REV9: FieldDef[] = [
   { id: '20', label: 'Tool Temperature', length: 4, unit: '°C' },
 ];
 
+/** MID 0045: Calibration Value Request/Reply */
 const MID_0045_REV1: FieldDef[] = [
   { id: '01', label: 'Calibration Value Unit', length: 1, transform: (v) => {
     const u: Record<string, string> = { '1': 'Nm', '2': 'ft·lbf', '3': 'cNm', '4': 'kNm', '5': 'MNm', '6': 'in·lbf', '7': 'Kpm' };
@@ -81,6 +90,7 @@ const MID_0046_FIELDS: FieldDef[] = [
   { id: '01', label: 'Tool Number', length: 2 },
 ];
 
+/** MID 0047: Tool Pairing — pair/unpair/set IR ID/radio channel */
 const MID_0047_FIELDS: FieldDef[] = [
   { id: '01', label: 'Pairing Handling Type', length: 2, transform: (v) => {
     const t: Record<string, string> = { '01': 'Pair by serial', '02': 'Pair by IR ID', '03': 'Disconn (unpair)', '04': 'Set IR ID', '05': 'Set Radio Channel' };
@@ -89,6 +99,7 @@ const MID_0047_FIELDS: FieldDef[] = [
   { id: '02', label: 'Tool Data', length: 14 },
 ];
 
+/** MID 0048: Tool Pairing Status */
 const MID_0048_FIELDS: FieldDef[] = [
   { id: '01', label: 'Pairing Status', length: 2, transform: (v) => {
     const s: Record<string, string> = { '00': 'Not paired', '01': 'Paired, connected', '02': 'Paired, disconnected' };
@@ -97,6 +108,7 @@ const MID_0048_FIELDS: FieldDef[] = [
   { id: '02', label: 'Timestamp', length: 19 },
 ];
 
+/** MID 0700: Tightening Data Download Status */
 const MID_0700_FIELDS: FieldDef[] = [
   { id: '01', label: 'Status', length: 1, transform: (v) => {
     const s: Record<string, string> = { '0': 'Idle', '1': 'Downloading', '2': 'Download complete', '3': 'Download error' };
@@ -109,6 +121,7 @@ const MID_0701_FIELDS: FieldDef[] = [
   { id: '01', label: 'Number of Tools', length: 3 },
 ];
 
+/** All tool decoder entries keyed by MID number */
 export const toolDecoderEntries: Record<string, DecoderEntry> = {
   '0041': {
     1: MID_0041_REV1, 2: MID_0041_REV2, 3: MID_0041_REV3, 4: MID_0041_REV4,

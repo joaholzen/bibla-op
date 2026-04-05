@@ -1,10 +1,15 @@
 /**
  * biblaOp — Open Protocol Library
- * Reply MID derivation logic
+ * Reply MID derivation logic.
+ *
+ * Given a MID definition, determines which MID(s) a controller would
+ * send in response. Uses explicit overrides for well-known pairs,
+ * then falls back to sequential MID number heuristics.
  */
 
 import type { MIDDefinition } from '../types/mid-catalog';
 
+/** Explicit reply mappings for MIDs that don't follow standard patterns */
 const MID_REPLY_OVERRIDES: Record<string, string[]> = {
   '0001': ['0002', '0004'],
   '0003': [],
@@ -27,6 +32,11 @@ export interface ReplyMidInfo {
   name: string;
 }
 
+/**
+ * Determine expected reply MID(s) for a given MID.
+ * Checks overrides first, then uses direction and naming conventions
+ * to infer the reply (e.g. request → reply, notification → ack).
+ */
 export function getReplyMids(mid: MIDDefinition, allMids: MIDDefinition[]): ReplyMidInfo[] {
   const overrides = MID_REPLY_OVERRIDES[mid.mid];
   if (overrides !== undefined) {
@@ -40,6 +50,7 @@ export function getReplyMids(mid: MIDDefinition, allMids: MIDDefinition[]): Repl
   const midNum = parseInt(mid.mid);
   const nextMid = allMids.find(m => parseInt(m.mid) === midNum + 1);
   
+  // Integrator → controller: expect next MID if it's a reply/data type
   if (mid.direction === 'integrator') {
     if (nextMid && nextMid.direction === 'controller' && 
         (nextMid.name.includes('Reply') || nextMid.name.includes('Upload') || nextMid.name.includes('Result') || nextMid.name.includes('Status') || nextMid.name.includes('Info'))) {
@@ -47,6 +58,7 @@ export function getReplyMids(mid: MIDDefinition, allMids: MIDDefinition[]): Repl
         return [{ mid: nextMid.mid, name: nextMid.name }];
       }
     }
+    // Default: expect ACK or NACK
     const mid5 = allMids.find(m => m.mid === '0005');
     const mid4 = allMids.find(m => m.mid === '0004');
     return [
@@ -55,6 +67,7 @@ export function getReplyMids(mid: MIDDefinition, allMids: MIDDefinition[]): Repl
     ];
   }
   
+  // Controller → integrator: expect next MID if it's an ACK
   if (mid.direction === 'controller') {
     if (nextMid && nextMid.direction === 'integrator' && 
         (nextMid.name.includes('Ack') || nextMid.name.includes('Acknowledge'))) {

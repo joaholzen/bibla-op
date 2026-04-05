@@ -1,10 +1,15 @@
 /**
  * biblaOp — Open Protocol Library
- * Variable data field parser (PID-based) and MID 1201/1202 decoders
+ * Variable data field parser (PID-based) and MID 1201/1202 decoders.
+ *
+ * PID-based fields use a 5-digit parameter ID + 3-digit length prefix
+ * followed by the value. This format is used by newer MIDs (1201, 2501, etc.)
+ * for flexible, extensible result data.
  */
 
 import type { DecodedField, DecodedDataField } from '../types/decoders';
 
+/** Tightening error bitfield definitions — maps bit positions to error labels */
 const TIGHTENING_ERROR_BITS: Array<{ bit: bigint; label: string }> = [
   { bit: BigInt('0x00000000000000000000000000000001'), label: 'Brake Failed' },
   { bit: BigInt('0x00000000000000000000000000000002'), label: 'Trigger Lost' },
@@ -28,8 +33,10 @@ const TIGHTENING_ERROR_BITS: Array<{ bit: bigint; label: string }> = [
   { bit: BigInt('0x00000000000000000000000080000000'), label: 'Torque In Window High' },
 ];
 
+/** PIDs whose values should be decoded as hex error bitfields */
 const ERROR_BITFIELD_PIDS = new Set(['01401', '01421', '05001', '05004']);
 
+/** Decode a hex string error bitfield into a comma-separated list of error labels */
 function decodeTighteningErrorBitfield(hexStr: string): string {
   const cleaned = hexStr.replace(/\s/g, '').toLowerCase();
   if (!cleaned || /^0+$/.test(cleaned)) return 'None';
@@ -47,6 +54,7 @@ function decodeTighteningErrorBitfield(hexStr: string): string {
   }
 }
 
+/** Known PID labels and units for variable data fields */
 const VARIABLE_PID_LABELS: Record<string, { label: string; unit?: string }> = {
   '00003': { label: 'Station Name' },
   '00010': { label: 'VIN Number' },
@@ -85,6 +93,10 @@ const VARIABLE_PID_LABELS: Record<string, { label: string; unit?: string }> = {
 
 export { decodeTighteningErrorBitfield, TIGHTENING_ERROR_BITS };
 
+/**
+ * Parse PID-based variable data fields from a data string.
+ * Format per field: [5-char PID][3-char length][value of that length]
+ */
 export function parseVariableDataFields(data: string): DecodedField[] {
   const fields: DecodedField[] = [];
   let pos = 0;
@@ -99,6 +111,7 @@ export function parseVariableDataFields(data: string): DecodedField[] {
     const meta = VARIABLE_PID_LABELS[pid];
     let displayValue = value.trim() || value;
 
+    // Decode error bitfield PIDs into human-readable error lists
     if (ERROR_BITFIELD_PIDS.has(pid)) {
       const decoded = decodeTighteningErrorBitfield(displayValue);
       if (decoded !== displayValue) {
@@ -111,6 +124,7 @@ export function parseVariableDataFields(data: string): DecodedField[] {
   return fields;
 }
 
+/** Decode MID 1201: Tightening result with PID-based variable data fields */
 export function decodeMID1201(dataField: string, revision: number): DecodedDataField | null {
   if (!dataField) return null;
   const fields: DecodedField[] = [];
@@ -125,6 +139,7 @@ export function decodeMID1201(dataField: string, revision: number): DecodedDataF
   const varFields = parseVariableDataFields(dataField.substring(pos));
   fields.push(...varFields);
 
+  // Build summary from tightening status + torque + angle if available
   const tStatus = varFields.find(f => f.id === '01400');
   const torque = varFields.find(f => f.id === '02001');
   const angle = varFields.find(f => f.id === '02011');
@@ -136,6 +151,7 @@ export function decodeMID1201(dataField: string, revision: number): DecodedDataF
   return { fields, summary, revision };
 }
 
+/** Decode MID 1202: Multi-step tightening result with PID-based variable data */
 export function decodeMID1202(dataField: string, revision: number): DecodedDataField | null {
   if (!dataField) return null;
   const fields: DecodedField[] = [];

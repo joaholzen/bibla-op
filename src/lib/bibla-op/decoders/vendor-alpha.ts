@@ -1,11 +1,15 @@
 /**
  * biblaOp — Open Protocol Library
- * Alpha vendor-specific decoder field definitions
+ * Alpha (Atlas Copco Power Focus) vendor-specific decoder field definitions.
+ *
+ * Overrides for MID 0041 (tool data), 0061/0065 (tightening results),
+ * and 0071/0076 (alarms) with Alpha-specific field layouts and strategies.
  */
 
 import type { FieldDef, DecoderEntry } from '../types/decoders';
 import { statusOkNok, tighteningStatusLabel, torqueAngleStatusLabel, torqueAngleStatusFn } from './parsers';
 
+/** Alpha-specific tightening strategy codes */
 const alphaStrategyTransform = (v: string): string => {
   const strategies: Record<string, string> = {
     '01': 'Torque Control / Angle Monitoring',
@@ -19,6 +23,7 @@ const alphaStrategyTransform = (v: string): string => {
   return strategies[v.trim()] ?? `Unknown (${v.trim()})`;
 };
 
+/** Alpha MID 0041 rev 2: tool data with calibration, service, and open end info */
 const ALPHA_MID_0041_REV2: FieldDef[] = [
   { id: '01', label: 'Tool Serial Number', length: 14 },
   { id: '02', label: 'Tool Number of Tightening', length: 10 },
@@ -45,6 +50,7 @@ const ALPHA_MID_0041_REV2: FieldDef[] = [
   { id: '11', label: 'PF Software Version', length: 19 },
 ];
 
+/** Alpha MID 0061 rev 2: full tightening result with Alpha-specific strategy */
 const ALPHA_MID_0061_REV2: FieldDef[] = [
   { id: '01', label: 'Cell ID', length: 4 },
   { id: '02', label: 'Channel ID', length: 2 },
@@ -94,6 +100,7 @@ const ALPHA_MID_0061_REV2: FieldDef[] = [
   { id: '46', label: 'Last Change in Pset', length: 19 },
 ];
 
+/** Alpha MID 0065 rev 2: old tightening result (simplified compared to 0061) */
 const ALPHA_MID_0065_REV2: FieldDef[] = [
   { id: '01', label: 'Tightening ID', length: 10 },
   { id: '02', label: 'VIN Number', length: 25 },
@@ -119,6 +126,7 @@ const ALPHA_MID_0065_REV2: FieldDef[] = [
   { id: '22', label: 'Batch Status', length: 1 },
 ];
 
+/** Alpha MID 0071: Alarm — 4-digit error code (differs from standard 5-digit) */
 const ALPHA_MID_0071: FieldDef[] = [
   { id: '01', label: 'Error Code', length: 4 },
   { id: '02', label: 'Controller Ready', length: 1, transform: (v) => v.trim() === '1' ? 'OK (no alarms)' : 'NOK (alarm active)' },
@@ -126,6 +134,7 @@ const ALPHA_MID_0071: FieldDef[] = [
   { id: '04', label: 'Time', length: 19 },
 ];
 
+/** Alpha MID 0076: Alarm Status — active/cleared with 4-digit error code */
 const ALPHA_MID_0076: FieldDef[] = [
   { id: '01', label: 'Alarm Status', length: 1, transform: (v) => v.trim() === '1' ? 'Active' : 'Cleared' },
   { id: '02', label: 'Error Code', length: 4 },
@@ -134,6 +143,7 @@ const ALPHA_MID_0076: FieldDef[] = [
   { id: '05', label: 'Time', length: 19 },
 ];
 
+/** Alpha vendor decoder map */
 export const ALPHA_DECODER_MAP: Record<string, DecoderEntry> = {
   '0041': { 2: ALPHA_MID_0041_REV2 },
   '0061': { 2: ALPHA_MID_0061_REV2 },

@@ -1,15 +1,22 @@
 /**
  * biblaOp — Open Protocol Library
  * Pset MID field definitions: MID 0011-0025, 2504-2505
+ *
+ * Parameter sets (Psets) define tightening parameters like torque/angle
+ * targets and limits. These MIDs handle listing, uploading, selecting,
+ * and modifying psets including batch size and XML-based configurations.
  */
 
 import type { FieldDef, DecoderEntry } from '../types/decoders';
 
+// MID 0011: Pset ID Upload Reply
 const MID_0011_REV1: FieldDef[] = [{ id: '01', label: 'Number of Psets', length: 3 }];
 const MID_0011_REV2: FieldDef[] = [{ id: '01', label: 'Number of Psets', length: 3 }];
 
+// MID 0012: Pset Data Upload Request
 const MID_0012_REV1: FieldDef[] = [{ id: '01', label: 'Parameter Set ID', length: 3 }];
 
+/** MID 0013 rev 1: Pset Data Upload Reply — core torque/angle parameters */
 export const MID_0013_REV1: FieldDef[] = [
   { id: '01', label: 'Pset ID', length: 3 },
   { id: '02', label: 'Pset Name', length: 25 },
@@ -23,6 +30,7 @@ export const MID_0013_REV1: FieldDef[] = [
   { id: '10', label: 'Final Angle Target', length: 5, unit: '°' },
 ];
 
+/** Rev 2: adds first target torque and start final angle */
 const MID_0013_REV2: FieldDef[] = [
   ...MID_0013_REV1,
   { id: '11', label: 'First Target Torque', length: 7, unit: 'Nm' },
@@ -31,6 +39,7 @@ const MID_0013_REV2: FieldDef[] = [
 
 const MID_0013_REV3 = MID_0013_REV1;
 
+/** Rev 5: adds current monitoring and post-view torque fields */
 const MID_0013_REV5: FieldDef[] = [
   ...MID_0013_REV2,
   { id: '13', label: 'Current Monitoring', length: 1 },
@@ -39,6 +48,7 @@ const MID_0013_REV5: FieldDef[] = [
   { id: '16', label: 'Post View Torque Max', length: 7, unit: 'Nm' },
 ];
 
+/** MID 0015: Pset Selected notification */
 export const MID_0015_REV1: FieldDef[] = [
   { id: '01', label: 'Pset ID', length: 3 },
   { id: '02', label: 'Timestamp', length: 19 },
@@ -64,6 +74,7 @@ const MID_0015_REV3: FieldDef[] = [
 
 const MID_0018_FIELDS: FieldDef[] = [{ id: '01', label: 'Parameter Set ID', length: 3 }];
 
+/** MID 0019: Set Pset Batch Size */
 const MID_0019_REV1: FieldDef[] = [
   { id: '01', label: 'Parameter Set ID', length: 3 },
   { id: '02', label: 'Batch Size', length: 4 },
@@ -72,12 +83,14 @@ const MID_0019_REV2: FieldDef[] = [...MID_0019_REV1];
 
 const MID_0020_FIELDS: FieldDef[] = [{ id: '01', label: 'Parameter Set ID', length: 3 }];
 
+/** MID 0022: Batch Counter notification */
 const MID_0022_FIELDS: FieldDef[] = [
   { id: '01', label: 'Batch Size', length: 4 },
   { id: '02', label: 'Batch Counter', length: 4 },
   { id: '03', label: 'Timestamp', length: 19 },
 ];
 
+/** MID 0025: XML-based parameter set (mPro format) */
 const MID_0025_REV1: FieldDef[] = [
   { id: '01', label: 'Application Number', length: 3 },
   { id: '02', label: 'XML Parameters', length: 0, transform: (v) => {
@@ -100,6 +113,7 @@ const MID_0025_REV2: FieldDef[] = [
   }},
 ];
 
+// MID 2504/2505: Pset selection by job step
 const MID_2504_FIELDS: FieldDef[] = [
   { id: '01', label: 'Parameter Set ID', length: 3 },
   { id: '02', label: 'Job ID', length: 4 },
@@ -108,6 +122,7 @@ const MID_2504_FIELDS: FieldDef[] = [
 
 const MID_2505_FIELDS: FieldDef[] = [{ id: '01', label: 'Parameter Set ID', length: 3 }];
 
+/** All pset decoder entries keyed by MID number */
 export const psetDecoderEntries: Record<string, DecoderEntry> = {
   '0011': { 1: MID_0011_REV1, 2: MID_0011_REV2 },
   '0012': { 1: MID_0012_REV1, 2: MID_0012_REV1, 3: MID_0012_REV1, 4: MID_0012_REV1, 5: MID_0012_REV1 },

@@ -1,11 +1,18 @@
 /**
  * biblaOp — Open Protocol Library
- * Parsing utilities and shared transform helpers for MID decoders
+ * Parsing utilities and shared transform/status helpers for MID decoders.
+ *
+ * Two parsing modes:
+ * - Parameterized: each field is prefixed by a 2-digit ID (e.g. "01value")
+ * - Flat: fields are concatenated without IDs, parsed by position only
  */
 
 import type { DecodedField, FieldDef } from '../types/decoders';
 
-/** Parse parameterized data fields (2-digit ID prefix + value) */
+/**
+ * Parse parameterized data fields where each value is prefixed by a 2-digit field ID.
+ * If the expected ID isn't at the current position, searches ahead up to 50 chars.
+ */
 export function parseParameterized(data: string, fieldDefs: FieldDef[]): DecodedField[] {
   const fields: DecodedField[] = [];
   let pos = 0;
@@ -13,6 +20,7 @@ export function parseParameterized(data: string, fieldDefs: FieldDef[]): Decoded
   for (const def of fieldDefs) {
     const idStr = def.id.padStart(2, '0');
     if (pos + 2 <= data.length && data.substring(pos, pos + 2) === idStr) {
+      // ID found at expected position
       pos += 2;
       const rawValue = data.substring(pos, pos + def.length);
       pos += def.length;
@@ -28,6 +36,7 @@ export function parseParameterized(data: string, fieldDefs: FieldDef[]): Decoded
         status: def.statusFn?.(rawValue),
       });
     } else {
+      // Search ahead for the field ID (handles padding or extra data)
       const idx = data.indexOf(idStr, pos);
       if (idx !== -1 && idx < pos + 50) {
         pos = idx + 2;
@@ -51,7 +60,10 @@ export function parseParameterized(data: string, fieldDefs: FieldDef[]): Decoded
   return fields;
 }
 
-/** Parse flat (non-parameterized) data fields — no 2-digit IDs, raw concatenated values */
+/**
+ * Parse flat (non-parameterized) data fields — values are concatenated
+ * without field IDs, extracted purely by position and length.
+ */
 export function parseFlat(data: string, fieldDefs: FieldDef[]): DecodedField[] {
   const fields: DecodedField[] = [];
   let pos = 0;
@@ -76,6 +88,7 @@ export function parseFlat(data: string, fieldDefs: FieldDef[]): DecodedField[] {
   return fields;
 }
 
+/** Status function: '1' → ok, '0' or '2' → nok */
 export const statusOkNok = (raw: string): 'ok' | 'nok' | undefined => {
   const v = raw.trim();
   if (v === '1') return 'ok';
@@ -83,6 +96,7 @@ export const statusOkNok = (raw: string): 'ok' | 'nok' | undefined => {
   return undefined;
 };
 
+/** Transform: '1' → 'OK', '0' → 'NOK' */
 export const tighteningStatusLabel = (raw: string): string => {
   const v = raw.trim();
   if (v === '1') return 'OK';
@@ -90,6 +104,7 @@ export const tighteningStatusLabel = (raw: string): string => {
   return v;
 };
 
+/** Transform: '0' → 'Low', '1' → 'OK', '2' → 'High' */
 export const torqueAngleStatusLabel = (raw: string): string => {
   const v = raw.trim();
   if (v === '0') return 'Low';
@@ -98,6 +113,7 @@ export const torqueAngleStatusLabel = (raw: string): string => {
   return v;
 };
 
+/** Status function for torque/angle: '1' → ok, '0'/'2' → nok */
 export const torqueAngleStatusFn = (raw: string): 'ok' | 'nok' | undefined => {
   const v = raw.trim();
   if (v === '1') return 'ok';
@@ -105,6 +121,7 @@ export const torqueAngleStatusFn = (raw: string): 'ok' | 'nok' | undefined => {
   return undefined;
 };
 
+/** Transform: batch status code to label */
 export const batchStatusLabel = (raw: string): string => {
   const v = raw.trim();
   if (v === '0') return 'Not completed';
@@ -113,6 +130,7 @@ export const batchStatusLabel = (raw: string): string => {
   return v;
 };
 
+/** Transform: tightening strategy code to human-readable name */
 export const strategyLabel = (raw: string): string => {
   const strategies: Record<string, string> = {
     '01': 'Torque control', '02': 'Angle control', '03': 'Torque + Angle',

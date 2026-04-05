@@ -1,12 +1,16 @@
 /**
  * biblaOp — Open Protocol Library
- * Nexo vendor-specific decoder field definitions
+ * Nexo (Bosch Rexroth Nexo) vendor-specific decoder field definitions.
+ *
+ * Extends Bosch base decoders with Nexo-specific tool data (MID 0041)
+ * and tightening results (MID 0065) with power redundancy monitoring.
  */
 
 import type { FieldDef, DecoderEntry } from '../types/decoders';
 import { BOSCH_MID_0041_REV1 } from './vendor-bosch';
 import { statusOkNok, tighteningStatusLabel, torqueAngleStatusLabel, torqueAngleStatusFn } from './parsers';
 
+/** Nexo MID 0041 rev 2: extends Bosch rev 1 with calibration, service, and software info */
 const NEXO_MID_0041_REV2: FieldDef[] = [
   ...BOSCH_MID_0041_REV1,
   { id: '05', label: 'Calibration Value', length: 4 },
@@ -18,6 +22,7 @@ const NEXO_MID_0041_REV2: FieldDef[] = [
   { id: '11', label: 'Software Version', length: 19 },
 ];
 
+/** Nexo MID 0065 rev 2: tightening result with power redundancy monitoring */
 const NEXO_MID_0065_REV2: FieldDef[] = [
   { id: '01', label: 'Cell ID', length: 4 }, { id: '02', label: 'Channel ID', length: 2 },
   { id: '03', label: 'Controller Name', length: 25 }, { id: '04', label: 'ID Code', length: 25 },
@@ -41,12 +46,15 @@ const NEXO_MID_0065_REV2: FieldDef[] = [
   { id: '28', label: 'Timestamp', length: 19 },
 ];
 
+/** Rev 3: adds program name, torque unit, result type */
 const NEXO_MID_0065_REV3: FieldDef[] = [
   ...NEXO_MID_0065_REV2,
   { id: '29', label: 'Tightening Program Name', length: 25 },
   { id: '30', label: 'Torque Values Unit', length: 1 },
   { id: '31', label: 'Result Type', length: 2 },
 ];
+
+/** Rev 4: adds multi-part ID codes */
 const NEXO_MID_0065_REV4: FieldDef[] = [
   ...NEXO_MID_0065_REV3,
   { id: '32', label: 'ID Code Part 2', length: 25 },
@@ -54,6 +62,7 @@ const NEXO_MID_0065_REV4: FieldDef[] = [
   { id: '34', label: 'ID Code Part 4', length: 25 },
 ];
 
+/** Nexo vendor decoder map */
 export const NEXO_DECODER_MAP: Record<string, DecoderEntry> = {
   '0041': { 1: BOSCH_MID_0041_REV1, 2: NEXO_MID_0041_REV2 },
   '0065': { 1: NEXO_MID_0065_REV2, 2: NEXO_MID_0065_REV2, 3: NEXO_MID_0065_REV3, 4: NEXO_MID_0065_REV4 },
