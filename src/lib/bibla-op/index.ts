@@ -24,10 +24,10 @@ export { MID_CATALOG, getMidDefinition, getCategories, getAllMids, buildDefaultD
 export { RELAY_FUNCTION_OPTIONS, DIGITAL_INPUT_OPTIONS, ERROR_CODES } from './protocol/protocol-constants';
 
 // Reply mapping
-export { getExpectedReply } from './protocol/mid-replies';
+export { getReplyMids } from './protocol/mid-replies';
 
 // Alarm codes
-export { getAlarmDescription } from './protocol/alarm-codes';
+export { lookupAlarmCode } from './protocol/alarm-codes';
 
 // Torque units
 export { convertTorque, TORQUE_UNITS } from './protocol/torque-units';

@@ -16,6 +16,7 @@ import { ioDecoderEntries, decodeMID0215 } from './io';
 import { traceDecoderEntries, decodeMid0900, decodeMid0901 } from './traces';
 import { miscDecoderEntries } from './misc-fields';
 import { parseVariableDataFields, decodeMID1201, decodeMID1202 } from './variable-data';
+export { parseVariableDataFields } from './variable-data';
 import { DESOUTTER_DECODER_MAP } from './vendor-desoutter';
 
 const DECODER_MAP: Record<string, DecoderEntry> = {
