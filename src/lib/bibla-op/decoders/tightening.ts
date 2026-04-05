@@ -1,6 +1,10 @@
 /**
  * biblaOp — Open Protocol Library
  * Tightening result MID field definitions: MID 0061, 0064-0067, 0902
+ *
+ * MID 0061/0065 is the most complex MID with 12+ revisions, each adding
+ * more fields. Rev 998 adds multi-stage results; rev 999 is a flat format
+ * variant used by some controllers.
  */
 
 import type { FieldDef, DecoderEntry } from '../types/decoders';
@@ -9,6 +13,7 @@ import {
   torqueAngleStatusFn, batchStatusLabel, strategyLabel,
 } from './parsers';
 
+/** MID 0061 rev 1: basic tightening result (23 fields) */
 export const MID_0061_REV1: FieldDef[] = [
   { id: '01', label: 'Cell ID', length: 4 },
   { id: '02', label: 'Channel ID', length: 2 },
@@ -35,6 +40,7 @@ export const MID_0061_REV1: FieldDef[] = [
   { id: '23', label: 'Tightening ID', length: 10 },
 ];
 
+/** MID 0061 rev 2: expanded with strategy, monitoring statuses, rundown/self-tap/prevail fields */
 export const MID_0061_REV2: FieldDef[] = [
   { id: '01', label: 'Cell ID', length: 4 },
   { id: '02', label: 'Channel ID', length: 2 },
@@ -84,6 +90,7 @@ export const MID_0061_REV2: FieldDef[] = [
   { id: '46', label: 'Last Change', length: 19 },
 ];
 
+/** Rev 3: adds pset name, torque unit, and result type */
 const MID_0061_REV3: FieldDef[] = [
   ...MID_0061_REV2,
   { id: '47', label: 'Parameter Set Name', length: 25 },
@@ -94,6 +101,7 @@ const MID_0061_REV3: FieldDef[] = [
   { id: '49', label: 'Result Type', length: 2 },
 ];
 
+/** Rev 4: adds multi-part identifier results */
 const MID_0061_REV4: FieldDef[] = [
   ...MID_0061_REV3,
   { id: '50', label: 'Identifier Result Part 2', length: 25 },
@@ -101,17 +109,20 @@ const MID_0061_REV4: FieldDef[] = [
   { id: '52', label: 'Identifier Result Part 4', length: 25 },
 ];
 
+/** Rev 5: adds customer error code */
 export const MID_0061_REV5: FieldDef[] = [
   ...MID_0061_REV4,
   { id: '53', label: 'Customer Tightening Error Code', length: 4 },
 ];
 
+/** Rev 6: adds prevail torque compensate value and error status 2 */
 const MID_0061_REV6: FieldDef[] = [
   ...MID_0061_REV5,
   { id: '54', label: 'Prevail Torque Compensate Value', length: 6, unit: 'Nm' },
   { id: '55', label: 'Tightening Error Status 2', length: 10 },
 ];
 
+/** Rev 7: adds compensated angle and final angle decimal */
 const MID_0061_REV7: FieldDef[] = [
   ...MID_0061_REV6,
   { id: '56', label: 'Compensated Angle', length: 7, unit: '°' },
@@ -152,6 +163,7 @@ const MID_0061_REV12: FieldDef[] = [
   { id: '71', label: 'Tightening Time Low', length: 6, unit: 'ms' },
 ];
 
+/** Rev 998: multi-stage tightening with stage count fields */
 const MID_0061_REV998: FieldDef[] = [
   ...MID_0061_REV5,
   { id: '54', label: 'Prevail Torque Compensate Value', length: 6, unit: 'Nm' },
@@ -160,6 +172,7 @@ const MID_0061_REV998: FieldDef[] = [
   { id: '57', label: 'Number of Stage Results', length: 2 },
 ];
 
+/** Rev 999: flat (non-parameterized) format — no field ID prefixes */
 export const MID_0061_REV999_FLAT: FieldDef[] = [
   { id: 'VIN', label: 'VIN', length: 25 },
   { id: 'JOB', label: 'Job ID', length: 2 },
@@ -177,6 +190,7 @@ export const MID_0061_REV999_FLAT: FieldDef[] = [
   { id: 'TID', label: 'Tightening ID', length: 10 },
 ];
 
+/** Simplified MID 0061 layout used by some controllers (rev 0) */
 export const MID_0061_SIMPLE: FieldDef[] = [
   { id: '01', label: 'Cell ID', length: 4 },
   { id: '02', label: 'Channel ID', length: 2 },
@@ -200,6 +214,7 @@ export const MID_0061_SIMPLE: FieldDef[] = [
   { id: '20', label: 'Tightening ID', length: 10 },
 ];
 
+/** MID 0064: Old Tightening Request — request by tightening ID */
 const MID_0064_FIELDS: FieldDef[] = [
   { id: '01', label: 'Tightening ID', length: 10 },
 ];
@@ -215,12 +230,14 @@ const MID_0067_FIELDS: FieldDef[] = [
   { id: '01', label: 'Number of Results', length: 4 },
 ];
 
+/** MID 0902: Tightening result notification (simplified) */
 const MID_0902_FIELDS: FieldDef[] = [
   { id: '01', label: 'Tightening ID', length: 10 },
   { id: '02', label: 'Result Status', length: 1, transform: tighteningStatusLabel, statusFn: statusOkNok },
   { id: '03', label: 'Timestamp', length: 19 },
 ];
 
+/** Tightening decoder entries — MID 0065 shares 0061's field definitions */
 export const tighteningDecoderEntries: Record<string, DecoderEntry> = {
   '0061': {
     0: MID_0061_SIMPLE, 1: MID_0061_REV1, 2: MID_0061_REV2, 3: MID_0061_REV3,

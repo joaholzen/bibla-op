@@ -1,17 +1,22 @@
 /**
  * biblaOp — Open Protocol Library
- * Trace MID field definitions: MID 0900, 0901
+ * Trace MID field definitions: MID 0900 (trace curve data), MID 0901 (plot parameters)
+ *
+ * Trace messages carry sampled torque/angle curves from tightening operations.
+ * After the standard fields, optional PID-tagged metadata (bolt number, etc.) may follow.
  */
 
 import type { FieldDef, DecoderEntry, DecodedField, DecodedDataField } from '../types/decoders';
 import { parseParameterized } from './parsers';
 
+/** MID 0900: Trace Curve Data — tightening ID, trace type, and sample count */
 const MID_0900_FIELDS: FieldDef[] = [
   { id: '01', label: 'Tightening ID', length: 10 },
   { id: '02', label: 'Trace Type', length: 2, transform: (v) => v.trim() === '01' ? 'Torque' : v.trim() === '02' ? 'Angle' : v },
   { id: '03', label: 'Number of Samples', length: 4 },
 ];
 
+/** MID 0901: Trace Curve Plot Parameters — min/max ranges for rendering */
 const MID_0901_FIELDS: FieldDef[] = [
   { id: '01', label: 'Tightening ID', length: 10 },
   { id: '02', label: 'Torque Min', length: 7, unit: 'Nm' },
@@ -21,6 +26,10 @@ const MID_0901_FIELDS: FieldDef[] = [
   { id: '06', label: 'Number of Samples', length: 4 },
 ];
 
+/**
+ * Parse optional PID-tagged metadata that follows trace sample data.
+ * Known PIDs: Bolt Number, Station Number, Channel Number, Spindle Number.
+ */
 function parseTracePids(pidData: string): DecodedField[] {
   const fields: DecodedField[] = [];
   const PID_LABELS: Record<string, string> = {
@@ -43,6 +52,7 @@ function parseTracePids(pidData: string): DecodedField[] {
   return fields;
 }
 
+/** Decode MID 0900: parse standard fields, skip sample data block, then parse trailing PIDs */
 export function decodeMid0900(data: string, _rev: number): DecodedDataField | null {
   const baseFields = parseParameterized(data, MID_0900_FIELDS);
   if (baseFields.length === 0) return null;
@@ -50,6 +60,7 @@ export function decodeMid0900(data: string, _rev: number): DecodedDataField | nu
   const numSamples = parseInt(baseFields.find(f => f.id === '03')?.value ?? '0') || 0;
   const traceType = baseFields.find(f => f.id === '02')?.value ?? '';
 
+  // Field 04 contains the raw sample data block; skip it and parse any trailing PIDs
   const idx04 = data.indexOf('04');
   if (idx04 !== -1) {
     const sampleDataLen = numSamples * 7;
@@ -65,6 +76,7 @@ export function decodeMid0900(data: string, _rev: number): DecodedDataField | nu
   return { fields: baseFields, summary: `${traceType} trace, ${numSamples} samples (ID: ${tid})${boltInfo}` };
 }
 
+/** Decode MID 0901: parse plot parameter fields and trailing PIDs */
 export function decodeMid0901(data: string, _rev: number): DecodedDataField | null {
   const baseFields = parseParameterized(data, MID_0901_FIELDS);
   if (baseFields.length === 0) return null;
@@ -81,6 +93,7 @@ export function decodeMid0901(data: string, _rev: number): DecodedDataField | nu
   return { fields: baseFields, summary: `Plot params (ID: ${tid})${boltInfo}` };
 }
 
+/** Trace decoder entries — all revisions use the same field definitions */
 export const traceDecoderEntries: Record<string, DecoderEntry> = {
   '0900': { 1: MID_0900_FIELDS, 2: MID_0900_FIELDS, 3: MID_0900_FIELDS },
   '0901': { 1: MID_0901_FIELDS, 2: MID_0901_FIELDS, 3: MID_0901_FIELDS },

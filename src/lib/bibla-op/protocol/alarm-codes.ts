@@ -1,8 +1,12 @@
 /**
  * biblaOp — Open Protocol Library
- * Controller alarm/event code lookups
+ * Controller alarm/event code lookups.
+ *
+ * Maps numeric event codes to human-readable names and severity levels.
+ * Currently covers Power Focus 6000 / IXB / Flex / PF8 / PFXC controllers.
  */
 
+// Controller type identifiers
 export const CONTROLLER_ID_PF4000 = 'pf4000' as const;
 export const CONTROLLER_ID_PF6000 = 'pf6000' as const;
 export const CONTROLLER_ID_IXB = 'ixb' as const;
@@ -18,9 +22,11 @@ export type EventType = 'Info' | 'Warning' | 'Error';
 export interface EventCodeEntry {
   name: string;
   type: EventType;
+  /** Set of controller type IDs this event applies to */
   availableFor: ReadonlySet<string>;
 }
 
+/** Helper to create a ReadonlySet of controller IDs */
 function avail(...ids: string[]): ReadonlySet<string> {
   return new Set(ids);
 }
@@ -31,6 +37,7 @@ const ixb = CONTROLLER_ID_IXB;
 const flex = CONTROLLER_ID_FLEX;
 const pfxc = CONTROLLER_ID_PFXC;
 
+/** Atlas Copco Power Focus event codes (shared across PF6000, IXB, Flex, PF8, PFXC) */
 export const PF6_EVENT_CODES: Record<string, EventCodeEntry> = {
   '1000': { name: 'Controller Started', type: 'Info', availableFor: avail(flex, ixb, pf6, pf8, pfxc) },
   '1010': { name: 'Tool Connected', type: 'Info', availableFor: avail(flex, pf6, pf8, pfxc) },
@@ -59,6 +66,7 @@ export const PF6_EVENT_CODES: Record<string, EventCodeEntry> = {
   '4014': { name: 'Angle Low', type: 'Info', availableFor: avail(flex, ixb, pf6, pf8, pfxc) },
 };
 
+/** Look up an alarm code by its numeric or "E"-prefixed string */
 export function lookupAlarmCode(code: string, _controllerTypeId?: string): string | undefined {
   const normalizedCode = code.startsWith('E') ? code : `E${code}`;
   const numericCode = normalizedCode.replace('E', '');

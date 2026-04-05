@@ -1,6 +1,10 @@
 /**
  * biblaOp — Open Protocol Library
- * mPro (Cleco/Apex) vendor-specific decoder field definitions
+ * mPro (Cleco/Apex) vendor-specific decoder field definitions.
+ *
+ * Overrides standard MIDs for mPro controllers with vendor-specific
+ * field layouts, strategy codes, batch status values, and extended
+ * tool data (rev 500/501 with dual-transducer support).
  */
 
 import type { FieldDef, DecoderEntry } from '../types/decoders';
@@ -12,6 +16,7 @@ import {
   batchStatusLabel,
 } from './parsers';
 
+// mPro MID 0002: Communication Start Ack — same as standard but with explicit revisions
 const MPRO_MID_0002_REV1 = MID_0002_REV1;
 const MPRO_MID_0002_REV2: FieldDef[] = [
   ...MPRO_MID_0002_REV1,
@@ -24,6 +29,7 @@ const MPRO_MID_0002_REV3: FieldDef[] = [
   { id: '07', label: 'Tool Software Version', length: 19 },
 ];
 
+/** mPro MID 0013: uses "Application ID" instead of "Pset ID" */
 export const MPRO_MID_0013_REV1: FieldDef[] = [
   { id: '01', label: 'Application ID', length: 3 },
   { id: '02', label: 'Application Name', length: 25 },
@@ -37,6 +43,7 @@ export const MPRO_MID_0013_REV1: FieldDef[] = [
   { id: '10', label: 'Final Angle Target', length: 5, unit: '°' },
 ];
 
+/** mPro MID 0041 rev 2: tool data with 6-digit calibration value */
 const MPRO_MID_0041_REV2: FieldDef[] = [
   ...MID_0041_REV1,
   { id: '05', label: 'Calibration Value', length: 6, unit: 'Nm' },
@@ -48,6 +55,7 @@ const MPRO_MID_0041_REV2: FieldDef[] = [
   { id: '11', label: 'Controller Software Version', length: 19 },
 ];
 
+/** Rev 500: extended tool data — dual transducer with T1 calibration, factors, and hardware info */
 const MPRO_MID_0041_REV500: FieldDef[] = [
   { id: '01', label: 'Original TQ Cal Value – T1', length: 9 },
   { id: '02', label: 'Calibration TQ – T1', length: 9 },
@@ -75,6 +83,8 @@ const MPRO_MID_0041_REV500: FieldDef[] = [
   { id: '24', label: 'Calibration TQ – T2', length: 9 },
   { id: '25', label: 'Angle Factor – T2', length: 9 },
 ];
+
+/** Rev 501: adds calibration/production dates and user-defined fields */
 const MPRO_MID_0041_REV501: FieldDef[] = [
   ...MPRO_MID_0041_REV500,
   { id: '70', label: 'Last Calibration Date', length: 19 },
@@ -89,6 +99,7 @@ const MPRO_MID_0041_REV501: FieldDef[] = [
   { id: '79', label: 'Exact Production Date', length: 19 },
 ];
 
+/** mPro MID 0061 rev 1: tightening result — uses "Linking Group" instead of "Job ID" */
 const MPRO_MID_0061_REV1: FieldDef[] = [
   { id: '01', label: 'Cell ID', length: 4 }, { id: '02', label: 'Channel ID', length: 2 },
   { id: '03', label: 'Controller Name', length: 25 }, { id: '04', label: 'VIN', length: 25 },
@@ -106,6 +117,7 @@ const MPRO_MID_0061_REV1: FieldDef[] = [
   { id: '23', label: 'Tightening ID', length: 10 },
 ];
 
+/** mPro-specific strategy labels */
 const mProStrategyLabel = (raw: string): string => {
   const strategies: Record<string, string> = {
     '01': 'Torque control', '02': 'Torque control/Angle mon.',
@@ -116,11 +128,13 @@ const mProStrategyLabel = (raw: string): string => {
   return strategies[raw.trim()] || raw.trim();
 };
 
+/** mPro-specific batch status (includes '3' = Running) */
 const mProBatchStatus = (v: string): string => {
   const s = v.trim();
   return s === '0' ? 'Not completed' : s === '1' ? 'OK' : s === '2' ? 'Not used' : s === '3' ? 'Running' : s;
 };
 
+/** mPro MID 0061 rev 2: expanded with mPro-specific strategy and monitoring fields */
 const MPRO_MID_0061_REV2: FieldDef[] = [
   { id: '01', label: 'Cell ID', length: 4 }, { id: '02', label: 'Channel ID', length: 2 },
   { id: '03', label: 'Controller Name', length: 25 }, { id: '04', label: 'VIN', length: 25 },
@@ -155,6 +169,7 @@ const MPRO_MID_0061_REV2: FieldDef[] = [
   { id: '45', label: 'Timestamp', length: 19 }, { id: '46', label: 'Last Change', length: 19 },
 ];
 
+/** mPro-specific torque unit codes */
 const mProTorqueUnitLabel = (v: string): string => {
   const units: Record<string, string> = { '1': 'Nm', '2': 'FtLbs', '3': 'InLbs', '4': 'Kpm', '5': 'KgCm', '6': 'OzfIn', '8': 'Ncm', '9': 'daNm' };
   return units[v.trim()] ?? v.trim();
@@ -179,6 +194,7 @@ const MPRO_MID_0061_REV6: FieldDef[] = [
   { id: '55', label: 'Tightening Error Status 2', length: 10 },
 ];
 
+/** mPro vendor decoder map */
 export const MPRO_DECODER_MAP: Record<string, DecoderEntry> = {
   '0002': { 1: MPRO_MID_0002_REV1, 2: MPRO_MID_0002_REV2, 3: MPRO_MID_0002_REV3 },
   '0013': { 1: MPRO_MID_0013_REV1 },

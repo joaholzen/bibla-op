@@ -1,12 +1,17 @@
 /**
  * biblaOp — Open Protocol Library
- * Bosch Rexroth vendor-specific decoder field definitions
+ * Bosch Rexroth vendor-specific decoder field definitions.
+ *
+ * Overrides standard MIDs for Bosch controllers (BS350, etc.) with
+ * vendor-specific field layouts for communication, psets, jobs, tools,
+ * identifiers, tightening results, alarms, and multi-spindle results.
  */
 
 import type { FieldDef, DecoderEntry } from '../types/decoders';
 import { MID_0002_REV1 } from './communication';
 import { statusOkNok, tighteningStatusLabel, torqueAngleStatusLabel, torqueAngleStatusFn } from './parsers';
 
+/** Bosch MID 0002 rev 2: adds manufacturer code */
 const BOSCH_MID_0002_REV2: FieldDef[] = [
   { id: '01', label: 'Cell ID', length: 4 }, { id: '02', label: 'Channel ID', length: 2 },
   { id: '03', label: 'Controller Name', length: 25 }, { id: '04', label: 'Manufacturer Code', length: 3 },
@@ -20,6 +25,7 @@ const BOSCH_MID_0002_REV3: FieldDef[] = [
 
 const BOSCH_MID_0006_FIELDS: FieldDef[] = [{ id: '', label: 'Spindle Status (64 channels)', length: 64 }];
 
+/** Bosch MID 0013: Pset data — uses 3-digit pset number instead of "Pset ID" */
 export const BOSCH_MID_0013_REV1: FieldDef[] = [
   { id: '01', label: 'Tightening Program Number', length: 3 },
   { id: '02', label: 'Tightening Program Name', length: 25 },
@@ -45,6 +51,7 @@ const BOSCH_MID_0019_REV2: FieldDef[] = [...BOSCH_MID_0019_REV1, { id: '03', lab
 const BOSCH_MID_0020_FIELDS: FieldDef[] = [{ id: '01', label: 'Tightening Program Number', length: 3 }];
 const BOSCH_MID_0031_FIELDS: FieldDef[] = [{ id: '01', label: 'Count', length: 2 }, { id: '02', label: 'Number List (variable)', length: 0 }];
 
+/** Bosch MID 0033: Job data with program list */
 const BOSCH_MID_0033_REV1: FieldDef[] = [
   { id: '01', label: 'Job Number', length: 2 }, { id: '02', label: 'Job Name', length: 25 },
   { id: '03', label: 'Order', length: 2 }, { id: '04', label: 'Max Time First Tightening', length: 4 },
@@ -57,6 +64,7 @@ const BOSCH_MID_0033_REV1: FieldDef[] = [
 
 const BOSCH_MID_0038_FIELDS: FieldDef[] = [{ id: '01', label: 'Job Number', length: 2 }];
 
+/** Bosch MID 0041: tool data — uses "Tool Number" instead of "Tool Serial Number" */
 export const BOSCH_MID_0041_REV1: FieldDef[] = [
   { id: '01', label: 'Tool Number', length: 14 }, { id: '02', label: 'Cycles', length: 10 },
   { id: '03', label: 'Date of Last Check', length: 19 }, { id: '04', label: 'Serial Number', length: 10 },
@@ -77,6 +85,7 @@ const BOSCH_MID_0052_REV2: FieldDef[] = [
 ];
 const BOSCH_MID_0052_REV999: FieldDef[] = [...BOSCH_MID_0052_REV2, { id: '05', label: 'ID Code Source', length: 4 }];
 
+/** Bosch MID 0061 rev 1: tightening result — uses OK/NOK counter instead of batch */
 const BOSCH_MID_0061_REV1: FieldDef[] = [
   { id: '01', label: 'Cell ID', length: 4 }, { id: '02', label: 'Channel ID', length: 2 },
   { id: '03', label: 'Controller Name', length: 25 }, { id: '04', label: 'ID Code', length: 25 },
@@ -93,6 +102,7 @@ const BOSCH_MID_0061_REV1: FieldDef[] = [
   { id: '22', label: 'OK/NOK Counter Status', length: 1 }, { id: '23', label: 'Tightening ID', length: 10 },
 ];
 
+/** Bosch MID 0061 rev 2: expanded with redundancy monitoring fields */
 const BOSCH_MID_0061_REV2: FieldDef[] = [
   { id: '01', label: 'Cell ID', length: 4 }, { id: '02', label: 'Channel ID', length: 2 },
   { id: '03', label: 'Controller Name', length: 25 }, { id: '04', label: 'ID Code', length: 25 },
@@ -139,6 +149,8 @@ const BOSCH_MID_0061_REV4: FieldDef[] = [
   { id: '50', label: 'ID Code Part 2', length: 25 }, { id: '51', label: 'ID Code Part 3', length: 25 }, { id: '52', label: 'ID Code Part 4', length: 25 },
 ];
 const BOSCH_MID_0061_REV5: FieldDef[] = [...BOSCH_MID_0061_REV4, { id: '53', label: 'Tightening Error Code', length: 4 }];
+
+/** Rev 999: flat format for legacy Bosch controllers */
 const BOSCH_MID_0061_REV999: FieldDef[] = [
   { id: '', label: 'ID Code', length: 25 }, { id: '', label: 'Job Number', length: 2 },
   { id: '', label: 'Tightening Program Number', length: 3 }, { id: '', label: 'OK Counter Limit', length: 4 },
@@ -153,6 +165,7 @@ const BOSCH_MID_0061_REV999: FieldDef[] = [
   { id: '', label: 'Timestamp', length: 19 }, { id: '', label: 'Tightening ID', length: 10 },
 ];
 
+// Bosch alarm MIDs
 const BOSCH_MID_0071_FIELDS: FieldDef[] = [
   { id: '01', label: 'Error Number', length: 4 },
   { id: '02', label: 'Controller Ready Status', length: 1, transform: (v) => v.trim() === '1' ? 'OK' : 'NOK' },
@@ -167,6 +180,7 @@ const BOSCH_MID_0076_FIELDS: FieldDef[] = [
   { id: '05', label: 'Time', length: 19 },
 ];
 
+/** Bosch MID 0101: multi-spindle result with placeholder fields */
 const BOSCH_MID_0101_REV1: FieldDef[] = [
   { id: '01', label: 'Number of Spindles', length: 2 }, { id: '02', label: 'ID Code', length: 25 },
   { id: '03', label: 'Job Number', length: 2 }, { id: '04', label: 'Application Number', length: 3 },
@@ -184,6 +198,7 @@ const BOSCH_MID_0101_REV1: FieldDef[] = [
 
 const BOSCH_MID_0150_FIELDS: FieldDef[] = [{ id: '01', label: 'ID Code', length: 64 }];
 
+/** Bosch vendor decoder map — keyed by MID number */
 export const BOSCH_DECODER_MAP: Record<string, DecoderEntry> = {
   '0002': { 1: MID_0002_REV1, 2: BOSCH_MID_0002_REV2, 3: BOSCH_MID_0002_REV3 },
   '0006': BOSCH_MID_0006_FIELDS,

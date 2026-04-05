@@ -1,11 +1,16 @@
 /**
  * biblaOp — Open Protocol Library
  * Job MID field definitions: MID 0031-0039, 0121-0140
+ *
+ * Jobs define sequences of tightening operations. These MIDs handle
+ * job listing, data upload, status notifications, selection, and
+ * advanced features like line control and job restart.
  */
 
 import type { FieldDef, DecoderEntry } from '../types/decoders';
 import { batchStatusLabel } from './parsers';
 
+/** Transform job status code to label */
 const jobStatusTransform = (v: string): string => {
   const s = v.trim();
   if (s === '0') return 'Not completed';
@@ -16,6 +21,7 @@ const jobStatusTransform = (v: string): string => {
   return s;
 };
 
+/** Transform job tightening status code to label (extended status set) */
 const jobTighteningStatusTransform = (v: string): string => {
   const map: Record<string, string> = {
     '0': 'OFF', '1': 'OK', '2': 'NOK', '3': 'Aborted', '4': 'Incremented',
@@ -25,9 +31,11 @@ const jobTighteningStatusTransform = (v: string): string => {
   return map[v.trim()] ?? v.trim();
 };
 
+// MID 0032: Job Data Upload Request
 const MID_0032_REV1: FieldDef[] = [{ id: '01', label: 'Job ID', length: 2 }];
 const MID_0032_REV2: FieldDef[] = [{ id: '01', label: 'Job ID', length: 4 }];
 
+/** MID 0033 rev 1: Job Data Upload Reply — 2-digit job ID */
 export const MID_0033_REV1: FieldDef[] = [
   { id: '01', label: 'Job ID', length: 2 },
   { id: '02', label: 'Job Name', length: 25 },
@@ -43,6 +51,7 @@ export const MID_0033_REV1: FieldDef[] = [
   { id: '12', label: 'Number of PSETs', length: 2 },
 ];
 
+/** MID 0033 rev 2: 4-digit job ID */
 const MID_0033_REV2: FieldDef[] = [
   { id: '01', label: 'Job ID', length: 4 },
   { id: '02', label: 'Job Name', length: 25 },
@@ -58,6 +67,7 @@ const MID_0033_REV2: FieldDef[] = [
   { id: '12', label: 'Number of PSETs', length: 2 },
 ];
 
+/** MID 0035: Job Info notification — status, batch, and timing data */
 const MID_0035_REV1: FieldDef[] = [
   { id: '01', label: 'Job ID', length: 2 },
   { id: '02', label: 'Job Status', length: 1, transform: jobStatusTransform },
@@ -98,16 +108,19 @@ const MID_0035_REV6: FieldDef[] = [
   { id: '17', label: 'Tightening Time High', length: 6, unit: 'ms' },
 ];
 
+// MID 0038/0039: Select Job / Job Restart
 const MID_0038_REV1: FieldDef[] = [{ id: '01', label: 'Job ID', length: 2 }];
 const MID_0038_REV2: FieldDef[] = [{ id: '01', label: 'Job ID', length: 4 }];
 const MID_0039_REV1: FieldDef[] = [{ id: '01', label: 'Job ID', length: 2 }];
 const MID_0039_REV2: FieldDef[] = [{ id: '01', label: 'Job ID', length: 4 }];
 
+// MID 0121-0124: Job Line Control
 const MID_0121_FIELDS: FieldDef[] = [{ id: '01', label: 'Job ID', length: 4 }, { id: '02', label: 'Sequence Number', length: 5 }];
 const MID_0122_FIELDS: FieldDef[] = [{ id: '01', label: 'Job ID', length: 4 }, { id: '02', label: 'Sequence Number', length: 5 }];
 const MID_0123_FIELDS: FieldDef[] = [{ id: '01', label: 'Job ID', length: 4 }, { id: '02', label: 'Sequence Number', length: 5 }];
 const MID_0124_FIELDS: FieldDef[] = [{ id: '01', label: 'Job ID', length: 4 }, { id: '02', label: 'Sequence Number', length: 5 }];
 
+// MID 0131-0133: Line Control and Alert flags
 const MID_0131_FIELDS: FieldDef[] = [
   { id: '01', label: 'Job ID', length: 4 },
   { id: '02', label: 'Line Control Flag', length: 1, transform: (v) => v.trim() === '1' ? 'Active' : 'Inactive' },
@@ -121,6 +134,7 @@ const MID_0133_FIELDS: FieldDef[] = [
   { id: '02', label: 'Alert 2 Flag', length: 1, transform: (v) => v.trim() === '1' ? 'Active' : 'Inactive' },
 ];
 
+/** MID 0140: Job Advanced — configuration details across revisions */
 const MID_0140_REV1: FieldDef[] = [
   { id: '01', label: 'Job ID', length: 2 },
   { id: '02', label: 'Job Name', length: 25 },
@@ -152,6 +166,7 @@ const MID_0140_REV4: FieldDef[] = [
   { id: '14', label: 'Identifier Result Part', length: 1 },
 ];
 
+/** All job decoder entries keyed by MID number */
 export const jobDecoderEntries: Record<string, DecoderEntry> = {
   '0032': { 1: MID_0032_REV1, 2: MID_0032_REV2, 3: MID_0032_REV2, 4: MID_0032_REV2 },
   '0033': { 1: MID_0033_REV1, 2: MID_0033_REV2, 3: MID_0033_REV2, 4: MID_0033_REV2, 5: MID_0033_REV2 },

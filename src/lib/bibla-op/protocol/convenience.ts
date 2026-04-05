@@ -1,6 +1,9 @@
 /**
  * biblaOp — Open Protocol Library
- * Pre-built convenience message builders and configuration types
+ * Pre-built convenience message builders and connection configuration.
+ *
+ * Provides ready-to-use functions for the most common Open Protocol messages:
+ * Communication Start/Stop, Keep Alive, and Positive/Negative Acknowledge.
  */
 
 import { buildMessage } from './open-protocol';
@@ -17,7 +20,7 @@ export interface BiblaOpConfig {
   commStartRevision: string;
 }
 
-/** Returns a BiblaOpConfig with sensible defaults */
+/** Returns a BiblaOpConfig with sensible defaults, optionally overridden */
 export function createDefaultConfig(overrides?: Partial<BiblaOpConfig>): BiblaOpConfig {
   return {
     host: '127.0.0.1',
@@ -43,12 +46,12 @@ export function buildKeepAlive(): string {
   return buildMessage('9999');
 }
 
-/** Build MID 0005 — Positive Acknowledge */
+/** Build MID 0005 — Positive Acknowledge for a given MID */
 export function buildPositiveAck(midToAck: string): string {
   return buildMessage('0005', '   ', midToAck.padStart(4, '0'));
 }
 
-/** Build MID 0004 — Negative Acknowledge */
+/** Build MID 0004 — Negative Acknowledge for a given MID with error code */
 export function buildNegativeAck(midToNack: string, errorCode: string = '00'): string {
   return buildMessage('0004', '   ', midToNack.padStart(4, '0') + errorCode.padStart(2, '0'));
 }

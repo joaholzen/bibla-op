@@ -1,6 +1,10 @@
 /**
  * biblaOp — Open Protocol Library
- * Torque unit definitions and conversion utilities
+ * Torque unit definitions and conversion utilities.
+ *
+ * Supports 11 torque units with conversion factors relative to Nm.
+ * Includes alias resolution (e.g. "ft lbf" → "ft·lbf") and
+ * display-ready formatting with appropriate decimal precision.
  */
 
 export type TorqueDisplayUnit = 'Nm' | 'cNm' | 'dNm' | 'mNm' | 'kNm' | 'ft·lbf' | 'in·lbf' | 'kgf·cm' | 'gf·cm' | 'ft·ozf' | 'Kpm';
@@ -9,10 +13,13 @@ export interface TorqueUnitDef {
   value: TorqueDisplayUnit;
   label: string;
   description: string;
+  /** Multiply Nm by this factor to get the target unit */
   fromNm: number;
+  /** Open Protocol unit code */
   opCode: string;
 }
 
+/** All supported torque units with conversion factors from Nm */
 export const TORQUE_UNITS: TorqueUnitDef[] = [
   { value: 'Nm',     label: 'N·m',      description: 'Newton meter',               fromNm: 1,           opCode: '001' },
   { value: 'cNm',    label: 'cN·m',     description: 'Centi Newton meter',         fromNm: 100,         opCode: '003' },
@@ -27,8 +34,10 @@ export const TORQUE_UNITS: TorqueUnitDef[] = [
   { value: 'Kpm',    label: 'Kpm',      description: 'Kilo pound meter',           fromNm: 0.1019716,   opCode: '007' },
 ];
 
+/** Set of all recognized torque unit strings (for validation) */
 export const TORQUE_UNIT_STRINGS = new Set(['Nm', 'N·m', 'cNm', 'cN·m', 'dNm', 'dN·m', 'mNm', 'mN·m', 'kNm', 'kN·m', 'ft·lbf', 'in·lbf', 'kgf·cm', 'gf·cm', 'ft·ozf', 'Kpm']);
 
+/** Map of common unit string variants to canonical unit names */
 const UNIT_ALIASES: Record<string, TorqueDisplayUnit> = {
   'Nm': 'Nm', 'N·m': 'Nm',
   'cNm': 'cNm', 'cN·m': 'cNm', 'Ncm': 'cNm',
@@ -43,15 +52,18 @@ const UNIT_ALIASES: Record<string, TorqueDisplayUnit> = {
   'Kpm': 'Kpm',
 };
 
+/** Get the unit definition for a given canonical unit */
 function getUnitDef(unit: TorqueDisplayUnit): TorqueUnitDef {
   return TORQUE_UNITS.find(u => u.value === unit) || TORQUE_UNITS[0];
 }
 
+/** Resolve a string (possibly an alias) to a canonical TorqueDisplayUnit */
 export function resolveTorqueUnit(unit?: string): TorqueDisplayUnit {
   if (!unit) return 'Nm';
   return UNIT_ALIASES[unit.trim()] || 'Nm';
 }
 
+/** Convert a torque value between two units */
 export function convertTorque(value: number, from: TorqueDisplayUnit, to: TorqueDisplayUnit): number {
   if (from === to) return value;
   const fromDef = getUnitDef(from);
@@ -60,6 +72,7 @@ export function convertTorque(value: number, from: TorqueDisplayUnit, to: Torque
   return inNm * toDef.fromNm;
 }
 
+/** Convert and format a torque value for display, with adaptive decimal precision */
 export function convertTorqueForDisplay(
   valueStr: string,
   sourceUnit: TorqueDisplayUnit,
@@ -68,6 +81,7 @@ export function convertTorqueForDisplay(
   const num = parseFloat(valueStr);
   if (isNaN(num)) return { value: valueStr, unit: sourceUnit };
   const converted = sourceUnit === displayUnit ? num : convertTorque(num, sourceUnit, displayUnit);
+  // Adaptive precision: fewer decimals for large values, more for small
   const formatted = Math.abs(converted) >= 100 ? converted.toFixed(1)
     : Math.abs(converted) >= 1 ? converted.toFixed(2)
     : Math.abs(converted) >= 0.01 ? converted.toFixed(4)

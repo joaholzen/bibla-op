@@ -1,9 +1,9 @@
 /**
  * biblaOp — Open Protocol Library
- * Shared protocol constants
+ * Shared protocol constants: relay functions, digital inputs, and error codes.
  */
 
-// Relay Function definitions
+/** Relay function options — maps relay function number to name and tracking flag */
 export const RELAY_FUNCTION_OPTIONS: { value: string; label: string; tracking?: boolean }[] = [
   { value: '000', label: '000 - Off' },
   { value: '001', label: '001 - OK', tracking: false },
@@ -38,7 +38,7 @@ export const RELAY_FUNCTION_OPTIONS: { value: string; label: string; tracking?: 
   { value: '030', label: '030 - Tool Locked', tracking: true },
 ];
 
-// Digital Input definitions
+/** Digital input function options */
 export const DIGITAL_INPUT_OPTIONS: { value: string; label: string }[] = [
   { value: '000', label: '000 - Off' },
   { value: '001', label: '001 - Select Pset Bit 0' },
@@ -53,7 +53,7 @@ export const DIGITAL_INPUT_OPTIONS: { value: string; label: string }[] = [
   { value: '010', label: '010 - Abort' },
 ];
 
-// Error codes for MID 0004
+/** MID 0004 error code descriptions */
 export const ERROR_CODES: Record<string, string> = {
   '00': 'No error',
   '01': 'Invalid data',

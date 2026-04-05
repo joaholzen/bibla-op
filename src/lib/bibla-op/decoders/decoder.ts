@@ -1,6 +1,7 @@
 /**
  * biblaOp — Open Protocol Library
- * Main decoder logic
+ * Main decoder logic: resolves field definitions by MID + revision,
+ * parses data fields, and produces decoded results with optional summaries.
  */
 
 import type { FieldDef, DecoderEntry, DecodedDataField, DecodedField, MidRevisionFieldSchema } from '../types/decoders';
@@ -23,6 +24,7 @@ import { BOSCH_DECODER_MAP } from './vendor-bosch';
 import { NEXO_DECODER_MAP } from './vendor-nexo';
 import { ALPHA_DECODER_MAP } from './vendor-alpha';
 
+/** Merged decoder map: all standard + Desoutter vendor MIDs */
 const DECODER_MAP: Record<string, DecoderEntry> = {
   ...communicationDecoderEntries,
   ...psetDecoderEntries,
@@ -37,19 +39,26 @@ const DECODER_MAP: Record<string, DecoderEntry> = {
   ...DESOUTTER_DECODER_MAP,
 };
 
+/** MIDs that use PID-based (variable-length) data encoding */
 const PID_MIDS = new Set([
   '0031', '0702', '0703', '0704', '1000', '1201', '1202', '1601', '1900', '1901', '2100', '2500', '2501', '2506',
 ]);
 
+/** Check whether a MID uses PID-based variable data fields */
 export function isPidBasedMid(mid: string): boolean {
   return PID_MIDS.has(mid);
 }
 
+/**
+ * Resolve the correct FieldDef[] for a given MID and revision.
+ * Falls back to the closest lower revision if an exact match isn't found.
+ */
 function resolveFields(mid: string, revision: number): FieldDef[] | null {
   const entry = DECODER_MAP[mid];
   if (!entry) return null;
   if (Array.isArray(entry)) return entry;
   if (entry[revision]) return entry[revision];
+  // Fall back to the highest revision <= requested
   const revisions = Object.keys(entry).map(Number).sort((a, b) => a - b);
   for (let i = revisions.length - 1; i >= 0; i--) {
     if (revisions[i] <= revision) return entry[revisions[i]];
@@ -57,6 +66,7 @@ function resolveFields(mid: string, revision: number): FieldDef[] | null {
   return entry[revisions[0]] || null;
 }
 
+/** Get the list of supported revisions for a MID, or null if unknown */
 export function getSupportedRevisions(mid: string): number[] | null {
   if (mid === '0031') return [1, 2];
   if (mid === '1201') return [1, 2, 3];
@@ -67,6 +77,7 @@ export function getSupportedRevisions(mid: string): number[] | null {
   return Object.keys(entry).map(Number).sort((a, b) => a - b);
 }
 
+/** Custom decoder for MID 0031 (Job ID list) — handles rev 1 (2-digit) and rev 2+ (4-digit) IDs */
 function decodeMID0031(dataField: string, revision: number): DecodedDataField | null {
   if (!dataField) return null;
   const fields: DecodedField[] = [];
@@ -87,7 +98,13 @@ function decodeMID0031(dataField: string, revision: number): DecodedDataField | 
   return { fields, summary: `${numJobs} job(s): ${jobIds.join(', ')}`, revision };
 }
 
+/**
+ * Decode a MID's data field into structured fields with labels, values, and statuses.
+ * Dispatches to custom decoders for special MIDs, PID-based parsing, or
+ * standard parameterized/flat parsing depending on the MID type.
+ */
 export function decodeDataField(mid: string, dataField: string, revision: number = 0): DecodedDataField | null {
+  // Custom decoders for MIDs with non-standard data layouts
   if (mid === '0031') return decodeMID0031(dataField, revision);
   if (mid === '0215') return decodeMID0215(dataField, revision);
   if (mid === '1201') return decodeMID1201(dataField, revision);
@@ -95,6 +112,7 @@ export function decodeDataField(mid: string, dataField: string, revision: number
   if (mid === '0900') return decodeMid0900(dataField, revision);
   if (mid === '0901') return decodeMid0901(dataField, revision);
 
+  // PID-based variable data fields (e.g. MID 2501, 1201)
   if (PID_MIDS.has(mid) && dataField) {
     const numFields = parseInt(dataField.substring(0, 3)) || 0;
     if (numFields > 0) {
@@ -104,14 +122,17 @@ export function decodeDataField(mid: string, dataField: string, revision: number
     return null;
   }
 
+  // Standard field-definition-based decoding
   const fieldDefs = resolveFields(mid, revision);
   if (!fieldDefs || !dataField) return null;
 
+  // Some MIDs use flat (non-parameterized) format without 2-digit field IDs
   const flatMids = new Set(['0200', '0224', '0225', '0004', '0005', '9998', '0050', '0110', '0262', '0404', '0411', '0082', '0104', '0064', '0108', '0504', '0046', '0214', '0240', '0242']);
   const isFlatFormat = ((mid === '0061' || mid === '0065') && revision === 999) || flatMids.has(mid);
   const fields = isFlatFormat ? parseFlat(dataField, fieldDefs) : parseParameterized(dataField, fieldDefs);
   if (fields.length === 0) return null;
 
+  // Rev 998: multi-stage tightening results with stage torque/angle pairs
   if ((mid === '0061' || mid === '0065') && revision === 998) {
     const numStageResults = parseInt(fields.find(f => f.id === '57')?.value ?? '0') || 0;
     if (numStageResults > 0) {
@@ -137,8 +158,10 @@ export function decodeDataField(mid: string, dataField: string, revision: number
     }
   }
 
+  // Build human-readable summaries for common MIDs
   let summary: string | undefined;
   if (mid === '0061' || mid === '0065') {
+    // Tightening result summary: status, torque, angle
     const unitField = fields.find(f => f.label === 'Torque Values Unit');
     const actualUnit = unitField?.value && unitField.value !== 'Nm' ? unitField.value : 'Nm';
     if (actualUnit !== 'Nm') { for (const f of fields) { if (f.unit === 'Nm') f.unit = actualUnit; } }
@@ -148,10 +171,12 @@ export function decodeDataField(mid: string, dataField: string, revision: number
     const tidField = fields.find(f => f.label === 'Tightening ID');
     if (statusField && torqueField) summary = `${statusField.value} — ${torqueField.value} ${actualUnit} / ${angleField?.value ?? '?'}° (ID: ${tidField?.value ?? '?'})`;
   } else if (mid === '0041') {
+    // Tool data summary: model + serial
     const model = fields.find(f => f.label === 'Tool Model');
     const serial = fields.find(f => f.label === 'Tool Serial Number');
     if (model || serial) summary = `${model?.value ?? 'Unknown'} (S/N: ${serial?.value ?? '?'})`;
   } else if (mid === '0002') {
+    // Comm start ack: controller name + software version
     const name = fields.find(f => f.label === 'Controller Name');
     const sw = fields.find(f => f.label === 'Software Version');
     if (name) summary = `${name.value}${sw ? ` — v${sw.value}` : ''}`;
@@ -170,10 +195,12 @@ export function decodeDataField(mid: string, dataField: string, revision: number
   return { fields, summary, revision };
 }
 
+/** Check if a decoder exists for the given MID */
 export function hasDecoder(mid: string): boolean {
   return mid in DECODER_MAP || mid === '0031' || mid === '1201' || mid === '1202';
 }
 
+/** Convert a DecoderEntry into an array of revision schemas with field metadata */
 function schemaFromEntry(entry: DecoderEntry, mid: string): MidRevisionFieldSchema[] {
   const flatMids = new Set(['0200', '0224', '0225', '0004', '0005', '9998', '0050', '0110', '0262', '0404', '0411', '0082', '0104', '0064', '0108', '0504', '0046', '0214', '0240', '0242']);
   if (Array.isArray(entry)) {
@@ -188,12 +215,14 @@ function schemaFromEntry(entry: DecoderEntry, mid: string): MidRevisionFieldSche
   }).sort((a, b) => a.revision - b.revision);
 }
 
+/** Get field schemas for all revisions of a standard MID */
 export function getMidRevisionSchemas(mid: string): MidRevisionFieldSchema[] | null {
   const entry = DECODER_MAP[mid];
   if (!entry) return null;
   return schemaFromEntry(entry, mid);
 }
 
+/** Unified schema collection for standard + all vendor decoder maps */
 export type UnifiedSchemas = {
   standard: Record<string, MidRevisionFieldSchema[]>;
   mpro: Record<string, MidRevisionFieldSchema[]>;
@@ -202,6 +231,7 @@ export type UnifiedSchemas = {
   alpha: Record<string, MidRevisionFieldSchema[]>;
 };
 
+/** Build unified schemas across standard and all vendor decoder maps */
 export function getUnifiedSchemas(): UnifiedSchemas {
   const standard: Record<string, MidRevisionFieldSchema[]> = {};
   for (const [mid, entry] of Object.entries(DECODER_MAP)) {

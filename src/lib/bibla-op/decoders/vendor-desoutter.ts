@@ -1,10 +1,16 @@
 /**
  * biblaOp — Open Protocol Library
  * Desoutter vendor-specific decoder field definitions (MID 7400–7427)
+ *
+ * Desoutter uses custom MIDs in the 7xxx range for phase-level tightening
+ * results (7404/7406), trace curve data (7410), step-level configuration
+ * (7413), accessory info (7419), and information messages (7421/7425).
+ * Values are often scaled (e.g. Nm×100, °×10).
  */
 
 import type { FieldDef, DecoderEntry } from '../types/decoders';
 
+/** MID 7404: Phase-level tightening result — torque/angle per phase with curve indices */
 const MID_7404: FieldDef[] = [
   { id: '01', label: 'Spindle Number', length: 2 },
   { id: '02', label: 'Cycle Number', length: 3 },
@@ -43,6 +49,7 @@ const MID_7404: FieldDef[] = [
   { id: '35', label: 'Report Status', length: 10 },
 ];
 
+/** MID 7406: Cycle-level result summary — overall torque/angle + VIN + batch info */
 const MID_7406: FieldDef[] = [
   { id: '01', label: 'Spindle Number', length: 2 },
   { id: '02', label: 'Cycle Number', length: 3 },
@@ -56,6 +63,7 @@ const MID_7406: FieldDef[] = [
   { id: '10', label: 'Batch Size', length: 4 },
 ];
 
+/** MID 7410 rev 1: Trace curve header — coefficients and sample count */
 const MID_7410_REV1: FieldDef[] = [
   { id: '01', label: 'Tool Number', length: 2 },
   { id: '02', label: 'Pset Number', length: 3 },
@@ -67,6 +75,7 @@ const MID_7410_REV1: FieldDef[] = [
   { id: '08', label: 'Telegram ID', length: 2 },
 ];
 
+/** Rev 2: adds result number and speed coefficient */
 const MID_7410_REV2: FieldDef[] = [
   { id: '01', label: 'Tool Number', length: 2 },
   { id: '02', label: 'Pset Number', length: 3 },
@@ -80,6 +89,7 @@ const MID_7410_REV2: FieldDef[] = [
   { id: '10', label: 'Telegram ID', length: 2 },
 ];
 
+/** MID 7413 rev 1: Step/phase configuration — limits, targets, and strategy */
 const MID_7413_REV1: FieldDef[] = [
   { id: '01', label: 'Spindle/Tool Number', length: 2 },
   { id: '02', label: 'Cycle/Pset Number', length: 3 },
@@ -120,6 +130,7 @@ const MID_7413_REV1: FieldDef[] = [
   { id: '37', label: 'Last Modification Date', length: 19 },
 ];
 
+/** Rev 2: adds torque rate, angle delay, gradient fields */
 const MID_7413_REV2: FieldDef[] = [
   ...MID_7413_REV1.slice(0, 20),
   { id: '21', label: 'Speed', length: 6, unit: '%' },
@@ -131,18 +142,21 @@ const MID_7413_REV2: FieldDef[] = [
   ...MID_7413_REV1.slice(26),
 ];
 
+/** MID 7419: Removable Accessory info */
 const MID_7419: FieldDef[] = [
   { id: '01', label: 'Pset Number', length: 3 },
   { id: '02', label: 'Timestamp', length: 20 },
   { id: '03', label: 'Removable Accessory Name', length: 50 },
 ];
 
+/** MID 7421/7425: Information message */
 const MID_7421: FieldDef[] = [
   { id: '01', label: 'Information Number', length: 3 },
   { id: '02', label: 'Number of Parameters', length: 2 },
   { id: '03', label: 'Information Data 1', length: 10 },
 ];
 
+/** Desoutter vendor decoder map */
 export const DESOUTTER_DECODER_MAP: Record<string, DecoderEntry> = {
   '7404': MID_7404,
   '7406': MID_7406,

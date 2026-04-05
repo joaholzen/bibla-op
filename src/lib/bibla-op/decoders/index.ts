@@ -1,6 +1,6 @@
 /**
  * biblaOp — Open Protocol Library
- * Decoders barrel export
+ * Decoders barrel export — re-exports all public decoder APIs and types.
  */
 
 export type { DecodedField, DecodedDataField, MidRevisionFieldSchema } from '../types/decoders';
