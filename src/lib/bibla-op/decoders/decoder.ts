@@ -212,11 +212,11 @@ export function getUnifiedSchemas(): UnifiedSchemas {
     return result;
   };
 
-  // Import vendor maps lazily to avoid circular deps at module level
-  const { MPRO_DECODER_MAP } = require('./vendor-mpro');
-  const { BOSCH_DECODER_MAP } = require('./vendor-bosch');
-  const { NEXO_DECODER_MAP } = require('./vendor-nexo');
-  const { ALPHA_DECODER_MAP } = require('./vendor-alpha');
+  // Vendor maps imported at top-level are fine — no circular deps
+  const { MPRO_DECODER_MAP } = await import('./vendor-mpro');
+  const { BOSCH_DECODER_MAP } = await import('./vendor-bosch');
+  const { NEXO_DECODER_MAP } = await import('./vendor-nexo');
+  const { ALPHA_DECODER_MAP } = await import('./vendor-alpha');
 
   return {
     standard,
