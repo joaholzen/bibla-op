@@ -1,0 +1,45 @@
+{
+  "name": "bibla-op",
+  "version": "0.1.0",
+  "description": "Zero-dependency Open Protocol (Atlas Copco / Desoutter / Bosch) message parser, builder, and decoder for Node.js and the browser",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "open-protocol",
+    "atlas-copco",
+    "desoutter",
+    "bosch",
+    "nexo",
+    "tightening",
+    "torque",
+    "industrial",
+    "mid",
+    "parser",
+    "decoder"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "sideEffects": false
+}

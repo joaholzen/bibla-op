@@ -18,6 +18,10 @@ import { miscDecoderEntries } from './misc-fields';
 import { parseVariableDataFields, decodeMID1201, decodeMID1202 } from './variable-data';
 export { parseVariableDataFields } from './variable-data';
 import { DESOUTTER_DECODER_MAP } from './vendor-desoutter';
+import { MPRO_DECODER_MAP } from './vendor-mpro';
+import { BOSCH_DECODER_MAP } from './vendor-bosch';
+import { NEXO_DECODER_MAP } from './vendor-nexo';
+import { ALPHA_DECODER_MAP } from './vendor-alpha';
 
 const DECODER_MAP: Record<string, DecoderEntry> = {
   ...communicationDecoderEntries,
@@ -212,11 +216,6 @@ export function getUnifiedSchemas(): UnifiedSchemas {
     return result;
   };
 
-  // Import vendor maps lazily to avoid circular deps at module level
-  const { MPRO_DECODER_MAP } = require('./vendor-mpro');
-  const { BOSCH_DECODER_MAP } = require('./vendor-bosch');
-  const { NEXO_DECODER_MAP } = require('./vendor-nexo');
-  const { ALPHA_DECODER_MAP } = require('./vendor-alpha');
 
   return {
     standard,
